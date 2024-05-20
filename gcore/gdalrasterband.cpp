@@ -53,6 +53,7 @@
 #include "gdal.h"
 #include "gdal_rat.h"
 #include "gdal_priv_templates.hpp"
+#include "gdal_interpolateatpoint.h"
 
 /************************************************************************/
 /*                           GDALRasterBand()                           */
@@ -8868,4 +8869,79 @@ std::shared_ptr<GDALMDArray> GDALRasterBand::AsMDArray() const
     }
     return GDALMDArrayFromRasterBand::Create(
         poDS, const_cast<GDALRasterBand *>(this));
+}
+
+/************************************************************************/
+/*                             InterpolateAtPoint()                     */
+/************************************************************************/
+
+/**
+ * \brief interpolates the value between pixels using
+ * a resampling algorithm
+ *
+ * @param dfPixel pixel coordinate as a double, where interpolation should be done.
+ * @param dfLine line coordinate as a double, where interpolation should be done.
+ * @param eInterpolation interpolation type. Only near, bilinear and cubic are allowed.
+ * @param pdfValue pointer to interpolated value
+ *
+ * @return CE_None on success, or an error code on failure.
+ * @since GDAL 3.10
+ */
+
+CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
+                                          GDALRIOResampleAlg eInterpolation,
+                                          double *pdfValue) const
+{
+    DEMResampleAlg eDEMresample = DRA_NearestNeighbour;
+    switch (eInterpolation)
+    {
+        case GRIORA_NearestNeighbour:
+            eDEMresample = DRA_NearestNeighbour;
+            break;
+        case GRIORA_Bilinear:
+            eDEMresample = DRA_Bilinear;
+            break;
+        case GRIORA_Cubic:
+            eDEMresample = DRA_Cubic;
+            break;
+        default:
+            CPLError(
+                CE_Failure, CPLE_AppDefined,
+                "Only near, bilinear and cubic interpolation methods allowed");
+
+            return CE_Failure;
+            break;
+    }
+    GDALRasterBand *pBand = const_cast<GDALRasterBand *>(this);
+    if (!m_oPointsCache)
+        m_oPointsCache = std::make_unique<GDALDoublePointsCache>();
+
+    auto res = GDALInterpolateAtPoint(
+        pBand, eDEMresample, m_oPointsCache->cache, dfPixel, dfLine, pdfValue);
+
+    return res ? CE_None : CE_Failure;
+}
+
+/************************************************************************/
+/*                        GDALRasterInterpolateAtPoint()                */
+/************************************************************************/
+
+/**
+ * \brief interpolates the value between pixels using
+ * a resampling algorithm
+ *
+ * @see GDALRasterBand::InterpolateAtPoint()
+ * @since GDAL 3.10
+ */
+
+CPLErr GDALRasterInterpolateAtPoint(GDALRasterBandH hBand, double dfPixel,
+                                    double dfLine,
+                                    GDALRIOResampleAlg eInterpolation,
+                                    double *pdfValue)
+{
+    VALIDATE_POINTER1(hBand, "GDALRasterInterpolateAtPoint", CE_Failure);
+
+    GDALRasterBand *poBand = GDALRasterBand::FromHandle(hBand);
+    return poBand->InterpolateAtPoint(dfPixel, dfLine, eInterpolation,
+                                      pdfValue);
 }

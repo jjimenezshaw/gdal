@@ -2552,6 +2552,11 @@ int CPL_DLL GDALDimensionSetIndexingVariable(GDALDimensionH hDim,
                                              GDALMDArrayH hArray);
 bool CPL_DLL GDALDimensionRename(GDALDimensionH hDim, const char *pszNewName);
 
+CPLErr CPL_DLL GDALRasterInterpolateAtPoint(GDALRasterBandH hBand,
+                                            double dfPixel, double dfLine,
+                                            GDALRIOResampleAlg eInterpolation,
+                                            double *pdfValue);
+
 CPL_C_END
 
 #endif /* ndef GDAL_H_INCLUDED */
