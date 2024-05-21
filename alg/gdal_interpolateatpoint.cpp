@@ -156,8 +156,8 @@ int GDALInterpolateAtPoint(GDALRasterBand *pBand, DEMResampleAlg eResampleAlg,
         // pixel coordinates:
         const double dfX = dfXIn - 0.5;
         const double dfY = dfYIn - 0.5;
-        const int dX = int(dfX);
-        const int dY = int(dfY);
+        const int dX = static_cast<int>(std::floor(dfX));
+        const int dY = static_cast<int>(std::floor(dfY));
         const double dfDeltaX = dfX - dX;
         const double dfDeltaY = dfY - dY;
 
@@ -218,8 +218,8 @@ int GDALInterpolateAtPoint(GDALRasterBand *pBand, DEMResampleAlg eResampleAlg,
         // pixel coordinates:
         const double dfX = dfXIn - 0.5;
         const double dfY = dfYIn - 0.5;
-        const int dX = static_cast<int>(dfX);
-        const int dY = static_cast<int>(dfY);
+        const int dX = static_cast<int>(std::floor(dfX));
+        const int dY = static_cast<int>(std::floor(dfY));
         const double dfDeltaX = dfX - dX;
         const double dfDeltaY = dfY - dY;
 
