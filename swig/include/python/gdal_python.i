@@ -4933,3 +4933,26 @@ def quiet_errors():
         tuple.max_part_count = max_part_count
         val = tuple
 %}
+
+%feature("shadow") InterpolateAtPoint %{
+def InterpolateAtPoint(self, *args, **kwargs):
+    """InterpolateAtPoint(Band self, pixel, line, interpolation) -> value
+
+    ... doc here TODO ...
+
+    Returns
+    -------
+    float/complex
+        Interpolated value, or None in case of error when exceptions are not enabled
+    """
+
+    ret = $action(self, *args, **kwargs)
+    if not ret:
+        return None
+
+    from . import gdal
+    if gdal.DataTypeIsComplex(self.DataType):
+        return complex(ret[0], ret[1])
+    else:
+        return ret[0]
+%}
