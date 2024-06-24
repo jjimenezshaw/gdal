@@ -2555,7 +2555,8 @@ bool CPL_DLL GDALDimensionRename(GDALDimensionH hDim, const char *pszNewName);
 CPLErr CPL_DLL GDALRasterInterpolateAtPoint(GDALRasterBandH hBand,
                                             double dfPixel, double dfLine,
                                             GDALRIOResampleAlg eInterpolation,
-                                            double *pdfValue);
+                                            double *pdfRealValue,
+                                            double *pdfImagValue);
 
 CPL_C_END
 

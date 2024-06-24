@@ -1805,7 +1805,8 @@ class CPL_DLL GDALRasterBand : public GDALMajorObject
      */
     CPLErr InterpolateAtPoint(double dfPixel, double dfLine,
                               GDALRIOResampleAlg eInterpolation,
-                              double *pdfValue) const;
+                              double *pdfRealValue,
+                              double *pdfImagValue = nullptr) const;
 
 #ifndef DOXYGEN_XML
     void ReportError(CPLErr eErrClass, CPLErrorNum err_no, const char *fmt, ...)

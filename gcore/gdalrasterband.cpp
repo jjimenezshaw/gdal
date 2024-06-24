@@ -8890,7 +8890,8 @@ std::shared_ptr<GDALMDArray> GDALRasterBand::AsMDArray() const
 
 CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
                                           GDALRIOResampleAlg eInterpolation,
-                                          double *pdfValue) const
+                                          double *pdfRealValue,
+                                          double *pdfImagValue) const
 {
     DEMResampleAlg eDEMresample = DRA_NearestNeighbour;
     switch (eInterpolation)
@@ -8917,7 +8918,8 @@ CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
         m_oPointsCache = std::make_unique<GDALDoublePointsCache>();
 
     auto res = GDALInterpolateAtPoint(
-        pBand, eDEMresample, m_oPointsCache->cache, dfPixel, dfLine, pdfValue);
+        pBand, eDEMresample, m_oPointsCache->cache, dfPixel, dfLine, pdfRealValue);
+    if (pdfImagValue) *pdfImagValue = 0;
 
     return res ? CE_None : CE_Failure;
 }
@@ -8937,11 +8939,12 @@ CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
 CPLErr GDALRasterInterpolateAtPoint(GDALRasterBandH hBand, double dfPixel,
                                     double dfLine,
                                     GDALRIOResampleAlg eInterpolation,
-                                    double *pdfValue)
+                                    double *pdfRealValue,
+                                    double *pdfImagValue)
 {
     VALIDATE_POINTER1(hBand, "GDALRasterInterpolateAtPoint", CE_Failure);
 
     GDALRasterBand *poBand = GDALRasterBand::FromHandle(hBand);
     return poBand->InterpolateAtPoint(dfPixel, dfLine, eInterpolation,
-                                      pdfValue);
+                                      pdfRealValue, pdfImagValue);
 }
