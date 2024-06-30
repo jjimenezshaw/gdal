@@ -137,6 +137,12 @@ MAIN_START(argc, argv)
         .help(_("Query the (overview_level)th overview (overview_level=1 is "
                 "the 1st overview)."));
 
+    std::string osResampling;
+    argParser.add_argument("-r")
+        .store_into(osResampling)
+        .metavar("nearest|bilinear|cubic")
+        .help(_("Select an interpolation algorithm."));
+
     {
         auto &group = argParser.add_mutually_exclusive_group();
 
@@ -245,6 +251,27 @@ MAIN_START(argc, argv)
         exit(1);
     }
 
+    GDALRIOResampleAlg eInterpolation{GRIORA_NearestNeighbour};
+    if (osResampling.empty() || STARTS_WITH_CI(osResampling.c_str(), "NEAR"))
+    {
+        eInterpolation = GRIORA_NearestNeighbour;
+    }
+    else if (EQUAL(osResampling.c_str(), "BILINEAR"))
+    {
+        eInterpolation = GRIORA_Bilinear;
+    }
+    else if (EQUAL(osResampling.c_str(), "CUBIC"))
+    {
+        eInterpolation = GRIORA_Cubic;
+    }
+    else
+    {
+        fprintf(
+            stderr,
+            "-r can only be used with values nearest, bilinear and cubic\n");
+        exit(1);
+    }
+
     /* -------------------------------------------------------------------- */
     /*      Open source file.                                               */
     /* -------------------------------------------------------------------- */
@@ -298,9 +325,8 @@ MAIN_START(argc, argv)
         {
             if (!osSourceSRS.empty())
             {
-                fprintf(
-                    stderr,
-                    "Enter X Y values separated by space, and press Return.\n");
+                fprintf(stderr, "Enter X Y values separated by space, and "
+                                "press Return.\n");
             }
             else
             {
@@ -350,6 +376,7 @@ MAIN_START(argc, argv)
     while (inputAvailable)
     {
         int iPixel, iLine;
+        double dfPixel{0}, dfLine{0};
 
         if (hCT)
         {
@@ -375,18 +402,18 @@ MAIN_START(argc, argv)
                 exit(1);
             }
 
-            iPixel = static_cast<int>(floor(adfInvGeoTransform[0] +
-                                            adfInvGeoTransform[1] * dfGeoX +
-                                            adfInvGeoTransform[2] * dfGeoY));
-            iLine = static_cast<int>(floor(adfInvGeoTransform[3] +
-                                           adfInvGeoTransform[4] * dfGeoX +
-                                           adfInvGeoTransform[5] * dfGeoY));
+            dfPixel = adfInvGeoTransform[0] + adfInvGeoTransform[1] * dfGeoX +
+                      adfInvGeoTransform[2] * dfGeoY;
+            dfLine = adfInvGeoTransform[3] + adfInvGeoTransform[4] * dfGeoX +
+                     adfInvGeoTransform[5] * dfGeoY;
         }
         else
         {
-            iPixel = static_cast<int>(floor(dfGeoX));
-            iLine = static_cast<int>(floor(dfGeoY));
+            dfPixel = dfGeoX;
+            dfLine = dfGeoY;
         }
+        iPixel = static_cast<int>(floor(dfPixel));
+        iLine = static_cast<int>(floor(dfLine));
 
         /* --------------------------------------------------------------------
          */
@@ -453,6 +480,9 @@ MAIN_START(argc, argv)
             int iPixelToQuery = iPixel;
             int iLineToQuery = iLine;
 
+            double dfPixelToQuery = dfPixel;
+            double dfLineToQuery = dfLine;
+
             if (nOverview >= 0 && hBand != nullptr)
             {
                 GDALRasterBandH hOvrBand = GDALGetOverview(hBand, nOverview);
@@ -470,6 +500,10 @@ MAIN_START(argc, argv)
                         iPixelToQuery = nOvrXSize - 1;
                     if (iLineToQuery >= nOvrYSize)
                         iLineToQuery = nOvrYSize - 1;
+                    dfPixelToQuery =
+                        dfPixel / GDALGetRasterXSize(hSrcDS) * nOvrXSize;
+                    dfLineToQuery =
+                        dfLine / GDALGetRasterYSize(hSrcDS) * nOvrYSize;
                 }
                 else
                 {
@@ -550,10 +584,21 @@ MAIN_START(argc, argv)
             const bool bIsComplex = CPL_TO_BOOL(
                 GDALDataTypeIsComplex(GDALGetRasterDataType(hBand)));
 
-            if (GDALRasterIO(hBand, GF_Read, iPixelToQuery, iLineToQuery, 1, 1,
-                             adfPixel, 1, 1,
-                             bIsComplex ? GDT_CFloat64 : GDT_Float64, 0,
-                             0) == CE_None)
+            CPLErr err;
+            if (bIsComplex)
+            {
+                err = GDALRasterIO(
+                    hBand, GF_Read, iPixelToQuery, iLineToQuery, 1, 1, adfPixel,
+                    1, 1, bIsComplex ? GDT_CFloat64 : GDT_Float64, 0, 0);
+            }
+            else
+            {
+                // GDALRasterInterpolateAtPoint is not implemented yet for complex datatype
+                err = GDALRasterInterpolateAtPoint(
+                    hBand, dfPixelToQuery, dfLineToQuery, eInterpolation,
+                    adfPixel, nullptr);
+            }
+            if (err == CE_None)
             {
                 CPLString osValue;
 
