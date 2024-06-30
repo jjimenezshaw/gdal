@@ -288,8 +288,10 @@ MAIN_START(argc, argv)
     OGRCoordinateTransformationH hCT = nullptr;
     if (!osSourceSRS.empty() && !EQUAL(osSourceSRS.c_str(), "-geoloc"))
     {
-
-        hSrcSRS = OSRNewSpatialReference(osSourceSRS.c_str());
+        hSrcSRS = OSRNewSpatialReference(nullptr);
+        OGRErr err = OSRSetFromUserInput(hSrcSRS, osSourceSRS.c_str());
+        if (err != OGRERR_NONE)
+            exit(1);
         OSRSetAxisMappingStrategy(hSrcSRS, OAMS_TRADITIONAL_GIS_ORDER);
         auto hTrgSRS = GDALGetSpatialRef(hSrcDS);
         if (!hTrgSRS)
@@ -599,9 +601,8 @@ MAIN_START(argc, argv)
             CPLErr err;
             if (bIsComplex)
             {
-                err = GDALRasterIO(
-                    hBand, GF_Read, iPixelToQuery, iLineToQuery, 1, 1, adfPixel,
-                    1, 1, bIsComplex ? GDT_CFloat64 : GDT_Float64, 0, 0);
+                err = GDALRasterIO(hBand, GF_Read, iPixelToQuery, iLineToQuery,
+                                   1, 1, adfPixel, 1, 1, GDT_CFloat64, 0, 0);
             }
             else
             {

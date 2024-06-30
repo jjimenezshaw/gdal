@@ -259,24 +259,25 @@ def test_gdallocationinfo_echo(gdallocationinfo_path):
 ###############################################################################
 
 
-def test_gdallocationinfo_wgs84_interpolate_bilinear(gdallocationinfo_path):
+def test_gdallocationinfo_nad27_interpolate_bilinear(gdallocationinfo_path):
+
+    # run on nad27 explicitly to avoid datum transformations.
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path
+        + " -valonly  -r bilinear -l_srs EPSG:4267 ../gcore/data/byte.tif -117.6354747 33.8970515"
+    )
+
+    assert float(ret) == pytest.approx(130.476908, rel=1e-4)
+
+
+def test_gdallocationinfo_nad27_interpolate_cubic(gdallocationinfo_path):
 
     ret = gdaltest.runexternal(
         gdallocationinfo_path
-        + " -valonly  -r bilinear -wgs84 ../gcore/data/byte.tif -117.6354747 33.8970515"
+        + " -valonly  -r cubic -l_srs EPSG:4267 ../gcore/data/byte.tif -117.6354747 33.8970515"
     )
 
-    assert float(ret) == pytest.approx(110.310062, rel=1e-4)
-
-
-def test_gdallocationinfo_wgs84_interpolate_cubic(gdallocationinfo_path):
-
-    ret = gdaltest.runexternal(
-        gdallocationinfo_path
-        + " -valonly  -r cubic -wgs84 ../gcore/data/byte.tif -117.6354747 33.8970515"
-    )
-
-    assert float(ret) == pytest.approx(110.7783101815, rel=1e-4)
+    assert float(ret) == pytest.approx(125.795025, rel=1e-4)
 
 
 def test_gdallocationinfo_report_geoloc_interpolate_bilinear(gdallocationinfo_path):
