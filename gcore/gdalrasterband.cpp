@@ -8882,7 +8882,8 @@ std::shared_ptr<GDALMDArray> GDALRasterBand::AsMDArray() const
  * @param dfPixel pixel coordinate as a double, where interpolation should be done.
  * @param dfLine line coordinate as a double, where interpolation should be done.
  * @param eInterpolation interpolation type. Only near, bilinear and cubic are allowed.
- * @param pdfValue pointer to interpolated value
+ * @param pdfRealValue pointer to interpolated value (real part)
+ * @param pdfImagValue pointer to interpolated value (imaginary part)
  *
  * @return CE_None on success, or an error code on failure.
  * @since GDAL 3.10
@@ -8917,9 +8918,11 @@ CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
     if (!m_oPointsCache)
         m_oPointsCache = std::make_unique<GDALDoublePointsCache>();
 
-    auto res = GDALInterpolateAtPoint(
-        pBand, eDEMresample, m_oPointsCache->cache, dfPixel, dfLine, pdfRealValue);
-    if (pdfImagValue) *pdfImagValue = 0;
+    auto res =
+        GDALInterpolateAtPoint(pBand, eDEMresample, m_oPointsCache->cache,
+                               dfPixel, dfLine, pdfRealValue);
+    if (pdfImagValue)
+        *pdfImagValue = 0;
 
     return res ? CE_None : CE_Failure;
 }
@@ -8939,8 +8942,7 @@ CPLErr GDALRasterBand::InterpolateAtPoint(double dfPixel, double dfLine,
 CPLErr GDALRasterInterpolateAtPoint(GDALRasterBandH hBand, double dfPixel,
                                     double dfLine,
                                     GDALRIOResampleAlg eInterpolation,
-                                    double *pdfRealValue,
-                                    double *pdfImagValue)
+                                    double *pdfRealValue, double *pdfImagValue)
 {
     VALIDATE_POINTER1(hBand, "GDALRasterInterpolateAtPoint", CE_Failure);
 

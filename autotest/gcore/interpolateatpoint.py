@@ -31,9 +31,12 @@ from osgeo import gdal
 ###############################################################################
 # Test some cases of InterpolateAtPoint
 
+
 def test_interpolateatpoint_1():
 
     ds = gdal.Open("data/byte.tif")
 
     # explanation for 10,12
-    assert(-139.75 == ds.GetRasterBand(1).InterpolateAtPoint(10, 12, gdal.GRIORA_Bilinear))
+    assert 139.75 == ds.GetRasterBand(1).InterpolateAtPoint(
+        10, 12, gdal.GRIORA_Bilinear
+    )
