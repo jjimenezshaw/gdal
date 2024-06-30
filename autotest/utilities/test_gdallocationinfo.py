@@ -254,3 +254,63 @@ def test_gdallocationinfo_echo(gdallocationinfo_path):
         strin="1 2",
     )
     assert "1,2,132" in ret
+
+
+###############################################################################
+
+
+def test_gdallocationinfo_wgs84_interpolate_bilinear(gdallocationinfo_path):
+
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path
+        + " -valonly  -r bilinear -wgs84 ../gcore/data/byte.tif -117.6354747 33.8970515"
+    )
+
+    assert float(ret) == pytest.approx(110.310062, rel=1e-4)
+
+
+def test_gdallocationinfo_wgs84_interpolate_cubic(gdallocationinfo_path):
+
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path
+        + " -valonly  -r cubic -wgs84 ../gcore/data/byte.tif -117.6354747 33.8970515"
+    )
+
+    assert float(ret) == pytest.approx(110.7783101815, rel=1e-4)
+
+
+def test_gdallocationinfo_report_geoloc_interpolate_bilinear(gdallocationinfo_path):
+
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path
+        + " -r bilinear -geoloc ../gcore/data/byte.tif 441319.09 3750601.80"
+    )
+    print(ret)
+    ret = ret.replace("\r\n", "\n")
+    assert "Report:" in ret
+    assert "Location: (9.98" in ret
+    assert "P,11.97" in ret
+    assert "Value: 137.2524" in ret
+
+
+def test_gdallocationinfo_report_interpolate_bilinear(gdallocationinfo_path):
+
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path + " -r bilinear ../gcore/data/byte.tif 9.98 11.97"
+    )
+    print(ret)
+    ret = ret.replace("\r\n", "\n")
+    assert "Report:" in ret
+    assert "Location: (9.98" in ret
+    assert "P,11.97" in ret
+    assert "Value: 137.24" in ret
+
+
+def test_gdallocationinfo_value_interpolate_bilinear(gdallocationinfo_path):
+
+    # Those coordinates are almost 10,12. It is testing that they are not converted to integer.
+    ret = gdaltest.runexternal(
+        gdallocationinfo_path
+        + " -valonly -r bilinear ../gcore/data/byte.tif 9.9999999 11.9999999"
+    )
+    assert float(ret) == pytest.approx(139.75, rel=1e-6)

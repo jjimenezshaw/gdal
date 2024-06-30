@@ -420,12 +420,13 @@ MAIN_START(argc, argv)
         /*      Prepare report. */
         /* --------------------------------------------------------------------
          */
-        CPLString osLine;
+        CPLString osXmlLine;
 
         if (bAsXML)
         {
-            osLine.Printf("<Report pixel=\"%d\" line=\"%d\">", iPixel, iLine);
-            osXML += osLine;
+            osXmlLine.Printf("<Report pixel=\"%d\" line=\"%d\">", iPixel,
+                             iLine);
+            osXML += osXmlLine;
             if (!osExtraContent.empty())
             {
                 char *pszEscaped =
@@ -438,7 +439,18 @@ MAIN_START(argc, argv)
         else if (!bQuiet)
         {
             printf("Report:\n");
-            printf("  Location: (%dP,%dL)\n", iPixel, iLine);
+            CPLString osPixel, osLine;
+            if (eInterpolation == GRIORA_NearestNeighbour)
+            {
+                osPixel.Printf("%d", iPixel);
+                osLine.Printf("%d", iLine);
+            }
+            else
+            {
+                osPixel.Printf("%.15g", dfPixel);
+                osLine.Printf("%.15g", dfLine);
+            }
+            printf("  Location: (%sP,%sL)\n", osPixel.c_str(), osLine.c_str());
             if (!osExtraContent.empty())
             {
                 printf("  Extra input: %s\n", osExtraContent.c_str());
@@ -519,8 +531,8 @@ MAIN_START(argc, argv)
 
             if (bAsXML)
             {
-                osLine.Printf("<BandReport band=\"%d\">", anBandList[i]);
-                osXML += osLine;
+                osXmlLine.Printf("<BandReport band=\"%d\">", anBandList[i]);
+                osXML += osXmlLine;
             }
             else if (!bQuiet)
             {

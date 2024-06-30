@@ -26,6 +26,8 @@
 # Boston, MA 02111-1307, USA.
 ###############################################################################
 
+import pytest
+
 from osgeo import gdal
 
 ###############################################################################
@@ -36,7 +38,8 @@ def test_interpolateatpoint_1():
 
     ds = gdal.Open("data/byte.tif")
 
-    # explanation for 10,12
-    assert 139.75 == ds.GetRasterBand(1).InterpolateAtPoint(
-        10, 12, gdal.GRIORA_Bilinear
-    )
+    # TODO add explanation for 10,12
+    got_bilinear = ds.GetRasterBand(1).InterpolateAtPoint(10, 12, gdal.GRIORA_Bilinear)
+    assert got_bilinear == pytest.approx(139.75, 1e-6)
+    got_cubic = ds.GetRasterBand(1).InterpolateAtPoint(10, 12, gdal.GRIORA_Cubic)
+    assert got_cubic == pytest.approx(138.02, 1e-2)
