@@ -201,6 +201,12 @@ class JPGDatasetCommon CPL_NON_FINAL : public GDALPamDataset
     int m_nRawThermalImageHeight = 0;
     std::vector<GByte> m_abyRawThermalImage{};
 
+    // FLIR embedded image (RGB next to raw thermal)
+    bool m_bEmbeddedImageLittleEndian = false;
+    int m_nEmbeddedImageWidth = 0;
+    int m_nEmbeddedImageHeight = 0;
+    std::vector<GByte> m_abyEmbeddedImage{};
+
     virtual CPLErr LoadScanline(int, GByte *outBuffer = nullptr) = 0;
     virtual void StopDecompress() = 0;
     virtual CPLErr Restart() = 0;
@@ -224,6 +230,7 @@ class JPGDatasetCommon CPL_NON_FINAL : public GDALPamDataset
     void ReadFLIRMetadata();
     void ReadDJIMetadata();
     GDALDataset *OpenRawThermalImage(const char *pszConnectionString);
+    GDALDataset *OpenEmbeddedImage(const char *pszConnectionString);
 
     bool bHasCheckedForMask{};
     JPGMaskBand *poMaskBand{};
